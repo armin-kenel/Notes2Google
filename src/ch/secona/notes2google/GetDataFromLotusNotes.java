@@ -48,6 +48,8 @@ import lotus.notes.NotesException;
  */
 public class GetDataFromLotusNotes {
 
+	private static final String NAMES_NSF = "names.nsf";
+	private static final String NOTES_USER = "Armin Kenel/Secona";
 	private static final String PATH = "out/lotus-notes-data.json";
 
 	private static String stripQuotes(String str) {
@@ -203,7 +205,7 @@ public class GetDataFromLotusNotes {
 
 		final String server = "";
 		// final String filePath = "secona\\ak_names.nsf";
-		final String filePath = "names.nsf";
+		final String filePath = NAMES_NSF;
 
 		// empty string here opens the database as the Notes ID user, e.g. active Notes
 		// Client user or the Domino server
@@ -211,7 +213,7 @@ public class GetDataFromLotusNotes {
 
 		// could as well be any other user; only works on local databases or between
 		// machines listed in the "Trusted servers" list
-		final String openAsUser = "Armin Kenel/Secona";
+		final String openAsUser = NOTES_USER;
 
 		// open address book database
 		final NotesDatabase dbNames = new NotesDatabase(server, filePath, openAsUser);
