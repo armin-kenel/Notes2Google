@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.auth.Credentials;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -28,6 +29,8 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.people.v1.PeopleService;
 import com.google.api.services.people.v1.PeopleServiceScopes;
+import com.google.api.services.people.v1.model.Biography;
+import com.google.api.services.people.v1.model.Birthday;
 import com.google.api.services.people.v1.model.ClientData;
 import com.google.api.services.people.v1.model.EmailAddress;
 import com.google.api.services.people.v1.model.ListConnectionsResponse;
@@ -72,7 +75,7 @@ public class PutDataIntoGoogle {
 			"skills," + //
 			"urls,";
 	// Global instance of the scopes required by this quick start. If modifying
-	// these scopes, delete your previously saved tokens/ folder.
+	// these scopes, delete your previously saved tokens / folder.
 	private static final List<String> SCOPES = Arrays.asList(PeopleServiceScopes.CONTACTS);
 	private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 	private static final String LOTUS_CONTACT_UNID = "LotusContactUnid";
@@ -81,10 +84,10 @@ public class PutDataIntoGoogle {
 	private static PeopleService peopleService;
 
 	/**
-	 * Creates an authorized Credential object.
+	 * Creates an authorized {@link Credentials} object.
 	 *
-	 * @param HTTP_TRANSPORT The network HTTP Transport.
-	 * @return An authorized Credential object.
+	 * @param HTTP_TRANSPORT The network HTTP Transport (see {@link NetHttpTransport})
+	 * @return An authorized {@link Credentials} object.
 	 * @throws IOException If the credentials.json file cannot be found.
 	 */
 	private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
@@ -180,7 +183,6 @@ public class PutDataIntoGoogle {
 
 	private static void showContactsNotInGoogleAndAddToGoogle( //
 			final List<InterfacePerson> interfacePersonList, final List<Person> allGooglePersons) {
-		boolean found = false;
 		int notFoundInGoogleCounter;
 		int doUpdateCounter = 0;
 		String lotusContactModified = "";
@@ -191,17 +193,15 @@ public class PutDataIntoGoogle {
 		for (final InterfacePerson interfacePerson : interfacePersonList) {
 			final String notesId = interfacePerson.getUid();
 
-			found = false;
 			foundGooglePerson = null;
 			lotusContactModified = "";
 			for (final Person googlePerson : allGooglePersons) {
 				if (getLotusContactUnid(googlePerson).equalsIgnoreCase(notesId)) {
-					found = true;
 					foundGooglePerson = googlePerson;
 					lotusContactModified = getLotusContactModified(googlePerson);
 				}
 			}
-			if (found) {
+			if (foundGooglePerson != null) {
 				// update
 				boolean doUpdate = false;
 				final String modified = interfacePerson.getModified();
@@ -275,6 +275,8 @@ public class PutDataIntoGoogle {
 		final String eMailPrivate = p.geteMailPrivate();
 		final String modified = p.getModified();
 		final String categories = p.getCategories();
+		final String comment = p.getComment();
+		final String birthDate = p.getBirthDate();
 		final List<Name> names = new ArrayList<>();
 
 		if ("Administrator".equals(lastName)) {
@@ -287,18 +289,20 @@ public class PutDataIntoGoogle {
 
 		final List<PhoneNumber> phoneNumbers = new ArrayList<>();
 
-		// `home`
-		// `work`
-		// `mobile`
-		// `homeFax`
-		// `workFax`
-		// `otherFax`
-		// `pager`
-		// `workMobile`
-		// `workPager`
-		// `main`
-		// `googleVoice`
-		// `other`
+		// predefined values:
+		// 'home'
+		// 'work'
+		// 'mobile'
+		// 'homeFax'
+		// 'workFax'
+		// 'otherFax'
+		// 'pager'
+		// 'workMobile'
+		// 'workPager'
+		// 'main'
+		// 'googleVoice'
+		// 'other'
+		// or null
 		phoneNumbers.add(new PhoneNumber().setType("home").setValue(phonePrivate));
 		phoneNumbers.add(new PhoneNumber().setType("work").setValue(phoneBusiness));
 		phoneNumbers.add(new PhoneNumber().setType("mobile").setValue(mobilePrivate));
@@ -310,8 +314,8 @@ public class PutDataIntoGoogle {
 		phoneNumbers.add(new PhoneNumber().setType("workPager").setValue(""));
 		phoneNumbers.add(new PhoneNumber().setType("main").setValue(""));
 		phoneNumbers.add(new PhoneNumber().setType("googleVoice").setValue(""));
-		// others
 		phoneNumbers.add(new PhoneNumber().setType("other").setValue(""));
+		// others
 		phoneNumbers.add(new PhoneNumber().setType("work2").setValue(phoneBusiness2));
 		phoneNumbers.add(new PhoneNumber().setType("workDirect").setValue(phoneBusinessDirect));
 		phoneNumbers.add(new PhoneNumber().setType("workMobile2").setValue(mobileBusiness2));
@@ -320,18 +324,37 @@ public class PutDataIntoGoogle {
 
 		final List<EmailAddress> emailAddresseList = new ArrayList<>();
 
-		// `home`
-		// `work`
-		// `other`
+		// predefined values:
+		// 'home'
+		// 'work'
+		// 'other'
+		// or null
 		emailAddresseList.add(new EmailAddress().setType("home").setValue(eMailPrivate));
 		emailAddresseList.add(new EmailAddress().setType("work").setValue(eMailBusiness));
 		contactToCreate.setEmailAddresses(emailAddresseList);
 
+		final List<Birthday> birthdayList = new ArrayList<>();
+
+		birthdayList.add(new Birthday().setText(birthDate));
+		contactToCreate.setBirthdays(birthdayList);
+
 		final List<Organization> organizationList = new ArrayList<>();
 
+		// predefined values:
+		// 'work'
+		// 'school'
+		// or null
 		organizationList.add(new Organization().setType("work").setName(company).setTitle(jobTitle));
 		contactToCreate.setOrganizations(organizationList);
 
+		// represents the attribute "notes" in Google
+		final List<Biography> biographyList = new ArrayList<>();
+
+		biographyList.add(new Biography().setValue(comment));
+		contactToCreate.setBiographies(biographyList);
+
+		// represents "own" data, specially the Notes ID
+		// for ensure correct synchronization
 		final List<ClientData> clientDataList = new ArrayList<>();
 
 		clientDataList.add(new ClientData().setKey(LOTUS_CONTACT_UNID).setValue(id));

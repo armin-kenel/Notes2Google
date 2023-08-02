@@ -7,22 +7,25 @@ import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.mindoo.domino.jna.NotesCollection;
 import com.mindoo.domino.jna.NotesDatabase;
+import com.mindoo.domino.jna.NotesNote;
 import com.mindoo.domino.jna.NotesViewEntryData;
 import com.mindoo.domino.jna.constants.Navigate;
 import com.mindoo.domino.jna.constants.ReadMask;
 import com.mindoo.domino.jna.errors.NotesError;
 import com.mindoo.domino.jna.gc.NotesGC;
+import com.mindoo.domino.jna.richtext.IRichTextNavigator;
 import com.mindoo.domino.jna.utils.IDUtils;
 import com.mindoo.domino.jna.utils.NotesInitUtils;
 import com.mindoo.domino.jna.utils.StringUtil;
 
+import lotus.domino.NotesException;
 import lotus.domino.NotesThread;
-import lotus.notes.NotesException;
 
 /**
  * To run this standalone sample app:<br>
@@ -216,6 +219,7 @@ public class GetDataFromLotusNotes {
 		final String openAsUser = NOTES_USER;
 
 		// open address book database
+		System.out.println("Opening database " + filePath + " with " + openAsUser);
 		final NotesDatabase dbNames = new NotesDatabase(server, filePath, openAsUser);
 		// final Session session = NotesFactory.createSession();
 		// final Database dbLegacyAPI = session.getDatabase(dbNames.getServer(),
@@ -269,15 +273,9 @@ public class GetDataFromLotusNotes {
 		System.out.println("Read " + viewEntries.size() + " entries");
 
 		for (final NotesViewEntryData currEntry : viewEntries) {
-//			final NoteInfoExt ext = dbNames.getNoteInfoExt(currEntry.getNoteId());
-//			final NotesNote notesNote = dbNames.openNoteByUnid(currEntry.getUNID());
-//			final Document doc = notesNote.toDocument(dbLegacyAPI);
-//
-//			if (ext.exists()) {
-//				final Document document = dbLegacyAPI.getDocumentByUNID(ext.getUnid());
-//			}
 			final InterfacePerson interfacePerson = mapInterfacePerson(currEntry);
 
+			addValues(interfacePerson, dbNames, currEntry);
 			interfacePersonList.add(interfacePerson);
 		}
 
@@ -288,6 +286,94 @@ public class GetDataFromLotusNotes {
 			numberOfPersons++;
 		}
 		ReadWriteInterfacePerson.writeJson(PATH, interfacePersonList);
+	}
+
+	private void addValues(final InterfacePerson interfacePerson, final NotesDatabase dbNames,
+			final NotesViewEntryData currEntry) {
+		final NotesNote notesNote = dbNames.openNoteByUnid(currEntry.getUNID());
+		Set<String> itemNames = notesNote.getItemNames();
+		List<NoteList> noteListList = new ArrayList<>();
+
+		if (null != itemNames) {
+			// System.out.println("-----------------------------------------------------");
+			for (String itemName : itemNames) {
+				NoteList noteList = new NoteList();
+
+				noteListList.add(noteList);
+				noteList.setName(itemName);
+				if (!itemName.equals("$Links")) {
+					List<Object> itemValue = notesNote.getItemValue(itemName);
+
+					noteList.setObjectList(itemValue);
+//					if (itemValue.get(0).equals("Dario")) {
+					// System.out.println("******** " + itemName + "=" + itemValue);
+					List<Object> itemBirthday = notesNote.getItemValue("Birthday");
+
+//					if (itemBirthday != null && itemBirthday.size() > 0) {
+//
+//						Object o = itemBirthday.get(0);
+//						if (o instanceof GregorianCalendar) {
+//							GregorianCalendar birthday = (GregorianCalendar) o;
+//							String dateFormatted = "";
+//
+//							SimpleDateFormat fmt = new SimpleDateFormat("dd-MM-yyyy");
+//							try {
+//								dateFormatted = fmt.format(o);
+//
+//								int nice = 0;
+//							} catch (Exception e) {
+//								// TODO: e.printStackTrace();
+//								// do nothing
+//							}
+//							interfacePerson.setBirthDate(dateFormatted);
+//							// System.out.println(itemName + "=" + itemValue + ": " + dateFormatted);
+//							int hold = 0;
+//						}
+//				}
+
+					List<Object> itemComment = notesNote.getItemValue("Comment");
+
+					if (itemComment != null && itemComment.size() > 0) {
+						final Object object = itemComment.get(0);
+
+						if (object instanceof IRichTextNavigator) {
+							IRichTextNavigator x = (IRichTextNavigator) object;
+
+							if (x != null) {
+								String text = x.getText();
+
+								interfacePerson.setComment(text);
+//								if (text != null && text.length() != 0) {
+//									System.out.println(itemName + "=" + itemValue + ": " + text);
+//								}
+								int hold = 0;
+							}
+						}
+					}
+
+//						List<Object> itemFormattedAddress = notesNote.getItemValue("FormattedAddress");
+//
+//						if (itemFormattedAddress != null && itemFormattedAddress.size() > 0) {
+//							IRichTextNavigator x = (IRichTextNavigator) itemFormattedAddress.get(0);
+//
+//							if (x != null) {
+//								String text = x.getText();
+//
+//								interfacePerson.setComment(text);
+//								if (text != null && text.length() != 0) {
+//									System.out.println(itemName + "=" + itemValue + ": " + text);
+//								}
+//								int hold = 0;
+//							}
+//						}
+//					} else {
+//						// System.out.println(itemName + "=" + itemValue);
+//					}
+				}
+			}
+		}
+
+		int stopHere = 0;
 	}
 
 	@SuppressWarnings("unchecked")
