@@ -7,7 +7,9 @@ Service to export contacts from Lotus Notes and import into Google contacts.
 https://github.com/klehmann/domino-jna
 
 ## Java version
-Use Java 8 due to CORBA libraries and 32 bit due to JNA access.
+We have to use Java 8 due to CORBA libraries and 32 bit due to JNA access.<br>
+Install jdk-8u202-windows-i586.exe (taken from [oracle.com](https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html)).<br>
+Latest version is 1.8.0_381. Message to update will appear.
 
 ## Registration of Lotus Notes DLLs
 During compilation time the following DLL files are needed.
@@ -34,3 +36,6 @@ Please use the appropriated commands (see below) for specific version.
 
 ## Build
 mvn clean install
+
+## Run
+Add "C:\Program Files (x86)\HCL\Notes" to the "PATH" variable.
