@@ -29,6 +29,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.people.v1.PeopleService;
 import com.google.api.services.people.v1.PeopleServiceScopes;
+import com.google.api.services.people.v1.model.Address;
 import com.google.api.services.people.v1.model.Biography;
 import com.google.api.services.people.v1.model.Birthday;
 import com.google.api.services.people.v1.model.ClientData;
@@ -38,6 +39,7 @@ import com.google.api.services.people.v1.model.Name;
 import com.google.api.services.people.v1.model.Organization;
 import com.google.api.services.people.v1.model.Person;
 import com.google.api.services.people.v1.model.PhoneNumber;
+import com.google.api.services.people.v1.model.Url;
 import com.google.common.base.Strings;
 
 public class PutDataIntoGoogle {
@@ -86,7 +88,8 @@ public class PutDataIntoGoogle {
 	/**
 	 * Creates an authorized {@link Credentials} object.
 	 *
-	 * @param HTTP_TRANSPORT The network HTTP Transport (see {@link NetHttpTransport})
+	 * @param HTTP_TRANSPORT The network HTTP Transport (see
+	 *                       {@link NetHttpTransport})
 	 * @return An authorized {@link Credentials} object.
 	 * @throws IOException If the credentials.json file cannot be found.
 	 */
@@ -278,6 +281,18 @@ public class PutDataIntoGoogle {
 		final String comment = p.getComment();
 		final String birthDate = p.getBirthDate();
 		final List<Name> names = new ArrayList<>();
+		final String webSite = p.getWebSite();
+		// addresses
+		final String streetAddress = p.getStreetAddress();
+		final String zip = p.getZip();
+		final String city = p.getCity();
+		final String state = p.getState();
+		final String country = p.getCountry();
+		final String officeStreetAddress = p.getOfficeStreetAddress();
+		final String officeZip = p.getOfficeZip();
+		final String officeCity = p.getOfficeCity();
+		final String officeState = p.getOfficeState();
+		final String officeCountry = p.getOfficeCountry();
 
 		if ("Administrator".equals(lastName)) {
 			// don't add the administrator to Google
@@ -332,6 +347,34 @@ public class PutDataIntoGoogle {
 		emailAddresseList.add(new EmailAddress().setType("home").setValue(eMailPrivate));
 		emailAddresseList.add(new EmailAddress().setType("work").setValue(eMailBusiness));
 		contactToCreate.setEmailAddresses(emailAddresseList);
+
+		final List<Address> addressList = new ArrayList<>();
+		Address privateAddress = new Address();
+		Address officeAddress = new Address();
+
+		privateAddress.setType("home");
+		privateAddress.setStreetAddress(streetAddress);
+		privateAddress.setPostalCode(zip);
+		privateAddress.setCity(city);
+		privateAddress.setRegion(state);
+		privateAddress.setCountry(country);
+		officeAddress.setType("work");
+		officeAddress.setStreetAddress(officeStreetAddress);
+		officeAddress.setPostalCode(officeZip);
+		officeAddress.setCity(officeZip);
+		officeAddress.setRegion(officeState);
+		officeAddress.setCountry(officeCountry);
+		addressList.add(privateAddress);
+		addressList.add(officeAddress);
+		contactToCreate.setAddresses(addressList);
+
+		final List<Url> urlList = new ArrayList<>();
+		final Url officeUrl = new Url();
+
+		officeUrl.setType("work");
+		officeUrl.setValue(webSite);
+		urlList.add(officeUrl);
+		contactToCreate.setUrls(urlList);
 
 		final List<Birthday> birthdayList = new ArrayList<>();
 
