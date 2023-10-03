@@ -275,7 +275,7 @@ public class GetDataFromLotusNotes {
 		for (final NotesViewEntryData currEntry : viewEntries) {
 			final InterfacePerson interfacePerson = mapInterfacePerson(currEntry);
 
-			addValues(interfacePerson, dbNames, currEntry);
+			mapValues(interfacePerson, dbNames, currEntry);
 			interfacePersonList.add(interfacePerson);
 		}
 
@@ -288,7 +288,7 @@ public class GetDataFromLotusNotes {
 		ReadWriteInterfacePerson.writeJson(PATH, interfacePersonList);
 	}
 
-	private void addValues(final InterfacePerson interfacePerson, final NotesDatabase dbNames,
+	private void mapValues(final InterfacePerson interfacePerson, final NotesDatabase dbNames,
 			final NotesViewEntryData currEntry) {
 		final NotesNote notesNote = dbNames.openNoteByUnid(currEntry.getUNID());
 		Set<String> itemNames = notesNote.getItemNames();
@@ -331,49 +331,56 @@ public class GetDataFromLotusNotes {
 //						}
 //				}
 
-					List<Object> itemComment = notesNote.getItemValue("Comment");
-
-					if (itemComment != null && itemComment.size() > 0) {
-						final Object object = itemComment.get(0);
-
-						if (object instanceof IRichTextNavigator) {
-							IRichTextNavigator x = (IRichTextNavigator) object;
-
-							if (x != null) {
-								String text = x.getText();
-
-								interfacePerson.setComment(text);
-//								if (text != null && text.length() != 0) {
-//									System.out.println(itemName + "=" + itemValue + ": " + text);
-//								}
-								int hold = 0;
-							}
-						}
-					}
-
-//						List<Object> itemFormattedAddress = notesNote.getItemValue("FormattedAddress");
-//
-//						if (itemFormattedAddress != null && itemFormattedAddress.size() > 0) {
-//							IRichTextNavigator x = (IRichTextNavigator) itemFormattedAddress.get(0);
-//
-//							if (x != null) {
-//								String text = x.getText();
-//
-//								interfacePerson.setComment(text);
-//								if (text != null && text.length() != 0) {
-//									System.out.println(itemName + "=" + itemValue + ": " + text);
-//								}
-//								int hold = 0;
-//							}
-//						}
+					mapComment(interfacePerson, notesNote);
+					interfacePerson.setWebSite(getItemAsString(notesNote, "WebSite"));
+					interfacePerson.setStreetAddress(getItemAsString(notesNote, "StreetAddress"));
+					interfacePerson.setZip(getItemAsString(notesNote, "Zip"));
+					interfacePerson.setCity(getItemAsString(notesNote, "City"));
+					interfacePerson.setState(getItemAsString(notesNote, "State"));
+					interfacePerson.setCountry(getItemAsString(notesNote, "country"));
+					interfacePerson.setOfficeStreetAddress(getItemAsString(notesNote, "OfficeStreetAddress"));
+					interfacePerson.setOfficeZip(getItemAsString(notesNote, "OfficeZip"));
+					interfacePerson.setOfficeCity(getItemAsString(notesNote, "OfficeCity"));
+					interfacePerson.setOfficeState(getItemAsString(notesNote, "OfficeState"));
 //					} else {
 //						// System.out.println(itemName + "=" + itemValue);
 //					}
 				}
 			}
 		}
+	}
+//	}
 
-		int stopHere = 0;
+	private void mapComment(final InterfacePerson interfacePerson, final NotesNote notesNote) {
+		List<Object> itemComment = notesNote.getItemValue("Comment");
+
+		if (itemComment != null && itemComment.size() > 0) {
+			final Object object = itemComment.get(0);
+
+			if (object instanceof IRichTextNavigator) {
+				IRichTextNavigator richTextNavigator = (IRichTextNavigator) object;
+
+				if (richTextNavigator != null) {
+					String text = richTextNavigator.getText();
+
+					interfacePerson.setComment(text);
+				}
+			}
+		}
+	}
+
+	private String getItemAsString(final NotesNote notesNote, final String key) {
+		final List<Object> itemCountry = notesNote.getItemValue(key);
+		String value = "";
+
+		if (itemCountry != null && itemCountry.size() > 0) {
+			final Object object = itemCountry.get(0);
+
+			if (object instanceof String) {
+				value = (String) object;
+			}
+		}
+		return value;
 	}
 
 	@SuppressWarnings("unchecked")
