@@ -54,6 +54,8 @@ public class GetDataFromLotusNotes {
 	private static final String NAMES_NSF = "names.nsf";
 	private static final String NOTES_USER = "Armin Kenel/Secona";
 	private static final String PATH = "out/lotus-notes-data.json";
+	private static final String COMMA_SPACE = ", ";
+	private String value = "";
 
 	private static String stripQuotes(String str) {
 		if (str != null) {
@@ -305,7 +307,7 @@ public class GetDataFromLotusNotes {
 					List<Object> itemValue = notesNote.getItemValue(itemName);
 
 					noteList.setObjectList(itemValue);
-//					if (itemValue.get(0).equals("Dario")) {
+//					if (itemValue.get(0).equals("Harald")) {
 					// System.out.println("******** " + itemName + "=" + itemValue);
 					List<Object> itemBirthday = notesNote.getItemValue("Birthday");
 
@@ -332,6 +334,8 @@ public class GetDataFromLotusNotes {
 //				}
 
 					mapComment(interfacePerson, notesNote);
+					interfacePerson.setChildren(getItemAsString(notesNote, "Children"));
+					interfacePerson.setSpouse(getItemAsString(notesNote, "Spouse"));
 					interfacePerson.setWebSite(getItemAsString(notesNote, "WebSite"));
 					interfacePerson.setStreetAddress(getItemAsString(notesNote, "StreetAddress"));
 					interfacePerson.setZip(getItemAsString(notesNote, "Zip"));
@@ -348,6 +352,7 @@ public class GetDataFromLotusNotes {
 				}
 			}
 		}
+		int stop = 0;
 	}
 //	}
 
@@ -371,13 +376,14 @@ public class GetDataFromLotusNotes {
 
 	private String getItemAsString(final NotesNote notesNote, final String key) {
 		final List<Object> itemCountry = notesNote.getItemValue(key);
-		String value = "";
 
+		value = "";
 		if (itemCountry != null && itemCountry.size() > 0) {
-			final Object object = itemCountry.get(0);
-
-			if (object instanceof String) {
-				value = (String) object;
+			itemCountry.forEach(p -> {
+				value = value + (String) p + COMMA_SPACE;
+			});
+			if (value.endsWith(COMMA_SPACE)) {
+				value = value.substring(0, value.length() - COMMA_SPACE.length());
 			}
 		}
 		return value;
