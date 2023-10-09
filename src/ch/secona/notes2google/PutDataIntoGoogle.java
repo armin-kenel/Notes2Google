@@ -39,6 +39,7 @@ import com.google.api.services.people.v1.model.Name;
 import com.google.api.services.people.v1.model.Organization;
 import com.google.api.services.people.v1.model.Person;
 import com.google.api.services.people.v1.model.PhoneNumber;
+import com.google.api.services.people.v1.model.Relation;
 import com.google.api.services.people.v1.model.Url;
 import com.google.common.base.Strings;
 
@@ -281,6 +282,8 @@ public class PutDataIntoGoogle {
 		final String comment = p.getComment();
 		final String birthDate = p.getBirthDate();
 		final List<Name> names = new ArrayList<>();
+		final String children = p.getChildren();
+		final String spouse = p.getSpouse();
 		final String webSite = p.getWebSite();
 		// addresses
 		final String streetAddress = p.getStreetAddress();
@@ -361,7 +364,7 @@ public class PutDataIntoGoogle {
 		officeAddress.setType("work");
 		officeAddress.setStreetAddress(officeStreetAddress);
 		officeAddress.setPostalCode(officeZip);
-		officeAddress.setCity(officeZip);
+		officeAddress.setCity(officeCity);
 		officeAddress.setRegion(officeState);
 		officeAddress.setCountry(officeCountry);
 		addressList.add(privateAddress);
@@ -375,6 +378,18 @@ public class PutDataIntoGoogle {
 		officeUrl.setValue(webSite);
 		urlList.add(officeUrl);
 		contactToCreate.setUrls(urlList);
+
+		final List<Relation> relationList = new ArrayList<>();
+		Relation childrenRelation = new Relation();
+		Relation spouseRelation = new Relation();
+
+		childrenRelation.setType("child");
+		childrenRelation.setPerson(children);
+		spouseRelation.setType("spouse");
+		spouseRelation.setPerson(spouse);
+		relationList.add(childrenRelation);
+		relationList.add(spouseRelation);
+		contactToCreate.setRelations(relationList);
 
 		final List<Birthday> birthdayList = new ArrayList<>();
 
