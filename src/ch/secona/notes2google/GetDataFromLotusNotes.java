@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.api.client.util.Strings;
 import com.mindoo.domino.jna.NotesCollection;
 import com.mindoo.domino.jna.NotesDatabase;
 import com.mindoo.domino.jna.NotesNote;
@@ -271,23 +272,20 @@ public class GetDataFromLotusNotes {
 		final List<NotesViewEntryData> viewEntries = peopleView.getAllEntries(startPos, skipCount, navigationType,
 				preloadEntryCount, readMask, new NotesCollection.EntriesAsListCallback(count));
 		final List<InterfacePerson> interfacePersonList = new ArrayList<>();
+		int numberOfPersons = 0;
+		int numberOfViewEntries = viewEntries.size();
 
 		System.out.println("Read " + viewEntries.size() + " entries");
-
 		for (final NotesViewEntryData currEntry : viewEntries) {
 			final InterfacePerson interfacePerson = mapInterfacePerson(currEntry);
 
 			mapValues(interfacePerson, dbNames, currEntry);
 			interfacePersonList.add(interfacePerson);
-		}
-
-		int numberOfPersons = 1;
-
-		for (final InterfacePerson interfacePerson : interfacePersonList) {
-			System.out.println(String.format("%4d: %s", numberOfPersons, interfacePerson));
 			numberOfPersons++;
+			System.out.println(String.format("%4d/%4d: %s", numberOfPersons, numberOfViewEntries, interfacePerson));
 		}
 		ReadWriteInterfacePerson.writeJson(PATH, interfacePersonList);
+		System.out.println(String.format("File '%s' written", PATH));
 	}
 
 	private void mapValues(final InterfacePerson interfacePerson, final NotesDatabase dbNames,
@@ -308,31 +306,6 @@ public class GetDataFromLotusNotes {
 
 					noteList.setObjectList(itemValue);
 //					if (itemValue.get(0).equals("Harald")) {
-					// System.out.println("******** " + itemName + "=" + itemValue);
-					List<Object> itemBirthday = notesNote.getItemValue("Birthday");
-
-//					if (itemBirthday != null && itemBirthday.size() > 0) {
-//
-//						Object o = itemBirthday.get(0);
-//						if (o instanceof GregorianCalendar) {
-//							GregorianCalendar birthday = (GregorianCalendar) o;
-//							String dateFormatted = "";
-//
-//							SimpleDateFormat fmt = new SimpleDateFormat("dd-MM-yyyy");
-//							try {
-//								dateFormatted = fmt.format(o);
-//
-//								int nice = 0;
-//							} catch (Exception e) {
-//								// TODO: e.printStackTrace();
-//								// do nothing
-//							}
-//							interfacePerson.setBirthDate(dateFormatted);
-//							// System.out.println(itemName + "=" + itemValue + ": " + dateFormatted);
-//							int hold = 0;
-//						}
-//				}
-
 					mapComment(interfacePerson, notesNote);
 					interfacePerson.setChildren(getItemAsString(notesNote, "Children"));
 					interfacePerson.setSpouse(getItemAsString(notesNote, "Spouse"));
@@ -346,9 +319,13 @@ public class GetDataFromLotusNotes {
 					interfacePerson.setOfficeZip(getItemAsString(notesNote, "OfficeZip"));
 					interfacePerson.setOfficeCity(getItemAsString(notesNote, "OfficeCity"));
 					interfacePerson.setOfficeState(getItemAsString(notesNote, "OfficeState"));
-//					} else {
-//						// System.out.println(itemName + "=" + itemValue);
-//					}
+					interfacePerson.setBirthDate(getBirthday(notesNote));
+
+					String revision = getRevisions(notesNote);
+
+					if (!Strings.isNullOrEmpty(revision)) {
+						interfacePerson.setModified(revision);
+					}
 				}
 			}
 		}
@@ -384,6 +361,42 @@ public class GetDataFromLotusNotes {
 			});
 			if (value.endsWith(COMMA_SPACE)) {
 				value = value.substring(0, value.length() - COMMA_SPACE.length());
+			}
+		}
+		return value;
+	}
+
+	private String getRevisions(final NotesNote notesNote) {
+		final List<Object> item = notesNote.getItemValue("$Revisions");
+
+		value = "";
+		if (item != null && !item.isEmpty()) {
+			Object revision = item.get(item.size() - 1);
+
+			if (revision instanceof GregorianCalendar) {
+				final GregorianCalendar cal = (GregorianCalendar) revision;
+				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss");
+
+				// use format() method to change the format
+				value = formattedDate.format(cal.getTime());
+			}
+		}
+		return value;
+	}
+
+	private String getBirthday(final NotesNote notesNote) {
+		final List<Object> item = notesNote.getItemValue("Birthday");
+
+		value = "";
+		if (item != null && !item.isEmpty()) {
+			Object birthday = item.get(0);
+
+			if (birthday instanceof GregorianCalendar) {
+				final GregorianCalendar cal = (GregorianCalendar) birthday;
+				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy");
+
+				// use format() method to change the format
+				value = formattedDate.format(cal.getTime());
 			}
 		}
 		return value;
@@ -464,7 +477,7 @@ public class GetDataFromLotusNotes {
 		if (modified54 != null) {
 			if (modified54 instanceof GregorianCalendar) {
 				final GregorianCalendar cal = (GregorianCalendar) modified54;
-				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy");
+				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss");
 				// use format() method to change the format
 				final String dateFormatted = formattedDate.format(cal.getTime());
 
