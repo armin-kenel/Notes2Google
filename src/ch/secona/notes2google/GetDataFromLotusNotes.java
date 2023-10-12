@@ -52,10 +52,13 @@ import lotus.domino.NotesThread;
  */
 public class GetDataFromLotusNotes {
 
+	private static final String MY_CONTACTS = "My Contacts";
 	private static final String NAMES_NSF = "names.nsf";
 	private static final String NOTES_USER = "Armin Kenel/Secona";
 	private static final String PATH = "out/lotus-notes-data.json";
 	private static final String COMMA_SPACE = ", ";
+	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MMM-yyyy");
 	private String value = "";
 
 	private static String stripQuotes(String str) {
@@ -71,9 +74,13 @@ public class GetDataFromLotusNotes {
 	}
 
 	public static void main(final String[] args) {
-		System.out.println("Environment: " + System.getenv());
-		System.out.println();
-		System.out.println("PATH: " + System.getenv("PATH"));
+		displayLine();
+		displayText("Domino JNA test application");
+		displayLine();
+		displayText("");
+		displayText("Environment: " + System.getenv());
+		displayText("PATH: " + System.getenv("PATH"));
+		displayText("");
 
 		String notesProgramDirPath = null;
 		String notesIniPath = null;
@@ -112,7 +119,7 @@ public class GetDataFromLotusNotes {
 		boolean notesInitialized = false;
 		// call notesInitExtended on app startup
 		try {
-			System.out.println("Initializing Notes API with launch arguments: " + Arrays.toString(notesInitArgs));
+			displayText("Initializing Notes API with launch arguments: " + Arrays.toString(notesInitArgs));
 
 			// System.setProperty("java.library.path", "C:\\Program Files
 			// (x86)\\HCL\\Notes");
@@ -132,26 +139,26 @@ public class GetDataFromLotusNotes {
 
 			if (e.getId() == 421) {
 				// 421 happens most of the time
-				System.err.println();
-				System.err.println(
+				displayError("");
+				displayError(
 						"Please make sure that the Notes.ini exists and specify Notes program dir and notes.ini path like this:");
-				System.err.println("Mac:");
-				System.err.println(
+				displayError("Mac:");
+				displayError(
 						"\"-notesdir=/Applications/IBM Notes.app/Contents/MacOS\" \"-ini:/Users/klehmann/Library/Preferences/Notes Preferences\"");
-				System.err.println("Windows:");
-				System.err.println(
+				displayError("Windows:");
+				displayError(
 						"\"-notesdir=C:\\Program Files (x86)\\IBM\\Notes\" \"-ini:C:\\Program Files (x86)\\IBM\\Notes\\Notes.ini\"");
-				System.err.println();
-				System.err.println(
+				displayError("");
+				displayError(
 						"As an alternative, use environment variables Notes_ExecDirectory and NotesINI for those two paths.");
 			} else if (e.getId() == 258) {
-				System.err.println();
-				System.err.println(
+				displayError("");
+				displayError(
 						"If using macOS Catalina, make sure that the java process has full disk access rights in the"
 								+ " macOS security settings. Looks like we cannot access the Notes directories.");
 			} else {
-				System.err.println();
-				System.err.println("Notes init failed with error code " + e.getId());
+				displayError("");
+				displayError("Notes init failed with error code " + e.getId());
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -172,18 +179,16 @@ public class GetDataFromLotusNotes {
 			// handles
 			NotesGC.runWithAutoGC(() -> {
 				// use IDUtils.switchToId if you want to unlock the ID file and switch the
-				// current process
-				// to this ID; should only be used in standalone applications
+				// current process to this ID; should only be used in stand alone applications
 				// if this is missing, you will be prompted for your ID password the first time
-				// the
-				// id certs are required
+				// the id certs are required
 				final String notesIdFilePath = System.getProperty("idfilepath");
 				final String idPassword = System.getProperty("idpw");
 
 				if (notesIdFilePath != null && notesIdFilePath.length() > 0 && idPassword != null
 						&& idPassword.length() > 0) {
-					// don't change Keyfileowner and other Notes.ini variables to this ID, so Notes
-					// Client can
+					// don't change key file owner and other Notes.ini variables
+					// to this ID, so Notes Client can
 					// keep on running concurrently with his own ID
 					final boolean dontSetEnvVar = true;
 
@@ -201,13 +206,14 @@ public class GetDataFromLotusNotes {
 	}
 
 	private void readNotesDataAndWriteToFile() throws NotesException {
-		System.out.println("Domino JNA test application");
-		System.out.println("---------------------------");
-		// System.out.println("Username of Notes ID: " + IDUtils.getIdUsername());
+		// displayText("Username of Notes ID: " + IDUtils.getIdUsername());
 
 		final boolean isOnServer = IDUtils.isOnServer();
 
-		System.out.println("Running on " + (isOnServer ? "server" : "client"));
+		displayText("");
+		displayLine();
+		displayText("");
+		displayText("Running on " + (isOnServer ? "server" : "client"));
 
 		final String server = "";
 		// final String filePath = "secona\\ak_names.nsf";
@@ -222,15 +228,17 @@ public class GetDataFromLotusNotes {
 		final String openAsUser = NOTES_USER;
 
 		// open address book database
-		System.out.println("Opening database " + filePath + " with " + openAsUser);
+		displayText("Opening database \"" + filePath + "\" with user \"" + openAsUser + "\"");
+
 		final NotesDatabase dbNames = new NotesDatabase(server, filePath, openAsUser);
 		// final Session session = NotesFactory.createSession();
 		// final Database dbLegacyAPI = session.getDatabase(dbNames.getServer(),
 		// dbNames.getRelativeFilePath());
 
 		// open main view
-		System.out.println("Reading People view");
-		final NotesCollection peopleView = dbNames.openCollectionByName("My Contacts");
+		displayText("Opening collection \"" + MY_CONTACTS + "\"");
+
+		final NotesCollection peopleView = dbNames.openCollectionByName(MY_CONTACTS);
 		// final NotesCollection peopleView = dbNames.openCollectionByName("People");
 
 		// now start reading view data
@@ -275,17 +283,22 @@ public class GetDataFromLotusNotes {
 		int numberOfPersons = 0;
 		int numberOfViewEntries = viewEntries.size();
 
-		System.out.println("Read " + viewEntries.size() + " entries");
+		displayText("");
+		displayText("Processing the following " + viewEntries.size() + " entries:");
 		for (final NotesViewEntryData currEntry : viewEntries) {
 			final InterfacePerson interfacePerson = mapInterfacePerson(currEntry);
 
 			mapValues(interfacePerson, dbNames, currEntry);
 			interfacePersonList.add(interfacePerson);
 			numberOfPersons++;
-			System.out.println(String.format("%4d/%4d: %s", numberOfPersons, numberOfViewEntries, interfacePerson));
+			displayText(String.format("%4d/%4d: %s", numberOfPersons, //
+					numberOfViewEntries, interfacePerson.getShortInfo()));
 		}
 		ReadWriteInterfacePerson.writeJson(PATH, interfacePersonList);
-		System.out.println(String.format("File '%s' written", PATH));
+		displayText("");
+		displayLine();
+		displayText(String.format("File '%s' written", PATH));
+		displayLine();
 	}
 
 	private void mapValues(final InterfacePerson interfacePerson, final NotesDatabase dbNames,
@@ -295,7 +308,7 @@ public class GetDataFromLotusNotes {
 		List<NoteList> noteListList = new ArrayList<>();
 
 		if (null != itemNames) {
-			// System.out.println("-----------------------------------------------------");
+			// displayLine();
 			for (String itemName : itemNames) {
 				NoteList noteList = new NoteList();
 
@@ -305,9 +318,9 @@ public class GetDataFromLotusNotes {
 					List<Object> itemValue = notesNote.getItemValue(itemName);
 
 					noteList.setObjectList(itemValue);
-//					if (itemValue.get(0).equals("Harald")) {
-					mapComment(interfacePerson, notesNote);
+//					if (itemValue.get(0).equals("Zoro")) {
 					interfacePerson.setChildren(getItemAsString(notesNote, "Children"));
+					interfacePerson.setComment(getComment(notesNote));
 					interfacePerson.setSpouse(getItemAsString(notesNote, "Spouse"));
 					interfacePerson.setWebSite(getItemAsString(notesNote, "WebSite"));
 					interfacePerson.setStreetAddress(getItemAsString(notesNote, "StreetAddress"));
@@ -329,13 +342,14 @@ public class GetDataFromLotusNotes {
 				}
 			}
 		}
-		int stop = 0;
+//		int stop = 0;
 	}
 //	}
 
-	private void mapComment(final InterfacePerson interfacePerson, final NotesNote notesNote) {
+	private String getComment(final NotesNote notesNote) {
 		List<Object> itemComment = notesNote.getItemValue("Comment");
 
+		value = "";
 		if (itemComment != null && itemComment.size() > 0) {
 			final Object object = itemComment.get(0);
 
@@ -343,12 +357,12 @@ public class GetDataFromLotusNotes {
 				IRichTextNavigator richTextNavigator = (IRichTextNavigator) object;
 
 				if (richTextNavigator != null) {
-					String text = richTextNavigator.getText();
-
-					interfacePerson.setComment(text);
+					value = richTextNavigator.getText();
 				}
 			}
 		}
+		remoteCarriageReturn();
+		return value;
 	}
 
 	private String getItemAsString(final NotesNote notesNote, final String key) {
@@ -363,6 +377,7 @@ public class GetDataFromLotusNotes {
 				value = value.substring(0, value.length() - COMMA_SPACE.length());
 			}
 		}
+		remoteCarriageReturn();
 		return value;
 	}
 
@@ -375,12 +390,12 @@ public class GetDataFromLotusNotes {
 
 			if (revision instanceof GregorianCalendar) {
 				final GregorianCalendar cal = (GregorianCalendar) revision;
-				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss");
 
 				// use format() method to change the format
-				value = formattedDate.format(cal.getTime());
+				value = DATE_TIME_FORMAT.format(cal.getTime());
 			}
 		}
+		remoteCarriageReturn();
 		return value;
 	}
 
@@ -393,13 +408,18 @@ public class GetDataFromLotusNotes {
 
 			if (birthday instanceof GregorianCalendar) {
 				final GregorianCalendar cal = (GregorianCalendar) birthday;
-				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy");
 
 				// use format() method to change the format
-				value = formattedDate.format(cal.getTime());
+				value = DATE_FORMAT.format(cal.getTime());
 			}
 		}
+		remoteCarriageReturn();
 		return value;
+	}
+
+	private void remoteCarriageReturn() {
+		// remove "carriage return"
+		value = value.replace("\r", StringUtils.EMPTY);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -421,7 +441,7 @@ public class GetDataFromLotusNotes {
 			final String ad = (String) addresses20;
 
 			if (!ad.isEmpty()) {
-				System.err.println("Addresses ($20) is not null: " + columnDataAsMap);
+				displayError("Addresses ($20) is not null: " + columnDataAsMap);
 			}
 		}
 		if (categories39 != null && categories39 instanceof String) {
@@ -477,9 +497,8 @@ public class GetDataFromLotusNotes {
 		if (modified54 != null) {
 			if (modified54 instanceof GregorianCalendar) {
 				final GregorianCalendar cal = (GregorianCalendar) modified54;
-				final SimpleDateFormat formattedDate = new SimpleDateFormat("dd-MMM-yyyy hh:mm:ss");
 				// use format() method to change the format
-				final String dateFormatted = formattedDate.format(cal.getTime());
+				final String dateFormatted = DATE_TIME_FORMAT.format(cal.getTime());
 
 				interfacePerson.setModified(dateFormatted);
 			}
@@ -530,7 +549,7 @@ public class GetDataFromLotusNotes {
 
 					if (mobileBusiness != null && !mobileBusiness.isEmpty()) {
 						if (!mobileBusiness.equals(value)) {
-							System.err.println("Mobile business is not equal");
+							displayError("Mobile business is not equal");
 						}
 					}
 					interfacePerson.setMobileBusiness(value);
@@ -544,7 +563,7 @@ public class GetDataFromLotusNotes {
 
 					if (mobilePrivate != null && !mobilePrivate.isEmpty()) {
 						if (!mobilePrivate.equals(value)) {
-							System.err.println("Mobile private is not equal");
+							displayError("Mobile private is not equal");
 						}
 					}
 					interfacePerson.setMobilePrivate(value);
@@ -564,14 +583,26 @@ public class GetDataFromLotusNotes {
 
 					if (faxBusiness != null && !faxBusiness.isEmpty()) {
 						if (!faxBusiness.equals(value)) {
-							System.err.println("fax business not equal");
+							displayError("fax business not equal");
 						}
 					}
 					interfacePerson.setFaxBusiness(value);
 				} else {
-					System.err.println("Unknown phone type: " + type);
+					displayError("Unknown phone type: " + type);
 				}
 			}
 		}
+	}
+
+	private static void displayText(final String text) {
+		System.out.println(text);
+	}
+
+	private static void displayLine() {
+		System.out.println("-----------------------------------------------------------------------");
+	}
+
+	private static void displayError(final String text) {
+		System.err.println(text);
 	}
 }
