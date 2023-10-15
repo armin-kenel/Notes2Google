@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -42,14 +44,15 @@ import com.google.api.services.people.v1.model.PhoneNumber;
 import com.google.api.services.people.v1.model.Relation;
 import com.google.api.services.people.v1.model.Url;
 import com.google.common.base.Strings;
+import com.mindoo.domino.jna.utils.StringUtil;
 
-public class PutDataIntoGoogle {
+public class UpdateGooglePersons {
 	private static final String DD_MMM_YYYY_HH_MM_SS = "dd-MMM-yyyy HH:mm:ss";
 	private static final String DD_MMM_YYYY = "dd-MMM-yyyy";
 	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat(DD_MMM_YYYY_HH_MM_SS);
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DD_MMM_YYYY);
 	private static final String PATH = "out/lotus-notes-data.json";
-	private static final String APPLICATION_NAME = "Google People API Java Quickstart";
+	private static final String APPLICATION_NAME = UpdateGooglePersons.class.getSimpleName();
 	private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 	private static final String TOKENS_DIRECTORY_PATH = "tokens";
 	private static final String PEOPLE_ME = "people/me";
@@ -117,6 +120,7 @@ public class PutDataIntoGoogle {
 	private static final String LOTUS_CONTACT_CATEGORIES = "LotusContactCategories";
 	private static final String LOTUS_CONTACT_MODIFIED = "LotusContactModified";
 	private static PeopleService peopleService;
+	private static boolean verbose = false;
 
 	/**
 	 * Creates an authorized {@link Credentials} object.
@@ -128,7 +132,7 @@ public class PutDataIntoGoogle {
 	 */
 	private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
 		// Load client secrets.
-		final InputStream in = PutDataIntoGoogle.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
+		final InputStream in = UpdateGooglePersons.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
 
 		if (in == null) {
 			throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
@@ -158,15 +162,21 @@ public class PutDataIntoGoogle {
 
 	public static void main(final String... args) throws IOException, GeneralSecurityException {
 
+		for (final String currArg : args) {
+			if (StringUtil.startsWithIgnoreCase(currArg, "-verbose")) {
+				verbose = true;
+			}
+		}
 		displayLine();
 		displayText(APPLICATION_NAME);
+		displayText(getNow());
 		displayLine();
 		displayText("");
-		displayText("Reading all contacts from Google ...");
+		displayText("Reading all persons from Google ...");
 
 		final List<Person> allPersons = getAllPersons(getPeopleService());
 
-		displayText("Number of contacts from Google: " + allPersons.size());
+		displayText("Number of persons from Google: " + allPersons.size());
 		displayText("Reading all people from Notes (interface file) ...");
 
 		final List<InterfacePerson> interfacePersonList = ReadWriteInterfacePerson.readJson(PATH,
@@ -176,13 +186,13 @@ public class PutDataIntoGoogle {
 		displayText("");
 		displayLine();
 		displayText("");
-		displayText("Contacts in Google but not found in Notes:");
+		displayText("Persons in Google but not found in Notes:");
 		showPersonsNotInNotes(allPersons, interfacePersonList);
 		displayText("");
 		displayLine();
 		displayText("");
-		displayText("People in Notes but not found (or have to be updated) in Google:");
-		showContactsNotInGoogleAndAddToGoogle(interfacePersonList, allPersons);
+		displayText("People found in Notes but not found in Google (will be added or updated):");
+		showPersonsNotInGoogleAndAddOrUpdateInGoogle(interfacePersonList, allPersons);
 		displayText("");
 		displayLine();
 		displayText("");
@@ -191,20 +201,30 @@ public class PutDataIntoGoogle {
 		displayText("");
 		displayLine();
 		displayText("");
-		displayText("Show all contacts from Google:");
+		displayText("Show all persons from Google:");
 
-		final List<Person> connections = allPersons;
+		final List<Person> personList = allPersons;
 		int numberOfPersons;
 
-		if (connections != null && connections.size() > 0) {
+		if (personList != null && personList.size() > 0) {
 			numberOfPersons = 0;
-			for (final Person person : connections) {
+			for (final Person person : personList) {
 				numberOfPersons++;
-				showData(numberOfPersons, person);
+				if (verbose) {
+					showData(numberOfPersons, person);
+				}
+			}
+			if (!verbose) {
+				displayText("Number of persons in Google read: " + numberOfPersons);
 			}
 		} else {
-			displayText("No connections found.");
+			displayText("No persons in Google found.");
 		}
+		displayText("");
+		displayLine();
+		displayText(getNow());
+		displayText("Terminated.");
+		displayLine();
 	}
 
 	private static void showNotesIdInGoogleIsNull(final List<Person> allPersons) {
@@ -217,7 +237,7 @@ public class PutDataIntoGoogle {
 		});
 	}
 
-	private static void showContactsNotInGoogleAndAddToGoogle( //
+	private static void showPersonsNotInGoogleAndAddOrUpdateInGoogle( //
 			final List<InterfacePerson> interfacePersonList, final List<Person> allGooglePersons) {
 		int notFoundInGoogleCounter;
 		int doUpdateCounter = 0;
@@ -232,10 +252,10 @@ public class PutDataIntoGoogle {
 			foundGooglePerson = null;
 			lotusContactModified = "";
 			// we're looking for the Lotus Notes person
-			// in the list of all Google contacts/persons
+			// in the list of all Google persons
 			for (final Person googlePerson : allGooglePersons) {
 				if (getLotusContactUnid(googlePerson).equalsIgnoreCase(notesId)) {
-					// contact/person found
+					// person found
 					foundGooglePerson = googlePerson;
 					// remember the modification date
 					lotusContactModified = getLotusContactModified(googlePerson);
@@ -296,24 +316,24 @@ public class PutDataIntoGoogle {
 		fillGooglePerson(interfacePerson, foundGooglePerson);
 		displayText("Update: " + interfacePerson.getShortInfo());
 		try {
-			final Person updatedContact = getPeopleService().people().updateContact(resourceName, foundGooglePerson)
+			final Person updatedPerson = getPeopleService().people().updateContact(resourceName, foundGooglePerson)
 					.setUpdatePersonFields(UPDATE_PERSON_ATTRIBUTES).execute();
 
-			updatedContact.getResourceName();
+			updatedPerson.getResourceName();
 		} catch (IOException | GeneralSecurityException e) {
 			e.printStackTrace();
 		}
 	}
 
 	private static void addNotesToGoogle(final InterfacePerson interfacePerson, final int count) {
-		final Person contactToCreate = new Person();
+		final Person personToCreate = new Person();
 
-		fillGooglePerson(interfacePerson, contactToCreate);
+		fillGooglePerson(interfacePerson, personToCreate);
 		displayText("Add: " + interfacePerson.getShortInfo());
 		try {
-			final Person createdContact = getPeopleService().people().createContact(contactToCreate).execute();
+			final Person createdPerson = getPeopleService().people().createContact(personToCreate).execute();
 
-			createdContact.getResourceName();
+			createdPerson.getResourceName();
 		} catch (final IOException | GeneralSecurityException e) {
 			e.printStackTrace();
 		}
@@ -620,7 +640,7 @@ public class PutDataIntoGoogle {
 		if (names != null && names.size() > 0) {
 			displayText(String.format("%4d. [%s", count, names.get(0).getDisplayName() + //
 					", notesId: " + lotusContactUnid + //
-					", mail: ]" + email));
+					", mail: " + email + "]"));
 		} else {
 			displayText(String.format("%4d. --> [%s]", count, person));
 		}
@@ -732,5 +752,12 @@ public class PutDataIntoGoogle {
 
 	private static void displayError(final String text) {
 		System.err.println(text);
+	}
+
+	private static String getNow() {
+		final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+		final LocalDateTime now = LocalDateTime.now();
+
+		return dtf.format(now);
 	}
 }
