@@ -338,51 +338,54 @@ public class PutDataIntoGoogle {
 		return date;
 	}
 
-	private static void fillGooglePerson(final InterfacePerson p, final Person contactToCreate) {
-		final String id = p.getUid();
-		final String firstName = p.getFirstName();
-		final String middleName = p.getMiddleName();
-		final String lastName = p.getLastName();
-		final String phoneBusiness = p.getPhoneBusiness();
-		final String phoneBusinessDirect = p.getPhoneBusinessDirect();
-		final String phoneBusiness2 = p.getPhoneBusiness2();
-		final String mobileBusiness = p.getMobileBusiness();
-		final String mobileBusiness2 = p.getMobileBusiness2();
-		final String mobilePrivate = p.getMobilePrivate();
-		final String mobilePrivate2 = p.getMobilePrivate2();
-		final String phonePrivate = p.getPhonePrivate();
-		final String faxPrivate = p.getFaxPrivate();
-		final String faxBusiness = p.getFaxBusiness();
+	private static void fillGooglePerson(final InterfacePerson interfacePerson, final Person person) {
+
+		fillNames(interfacePerson, person);
+		fillPhones(interfacePerson, person);
+		fillEmails(interfacePerson, person);
+		fillAddresses(interfacePerson, person);
+		fillRelations(interfacePerson, person);
+		fillWebsites(interfacePerson, person);
+		fillBirthdays(interfacePerson, person);
+		fillOrganizations(interfacePerson, person);
+		fillBiographies(interfacePerson, person);
+		fillClientData(interfacePerson, person);
+	}
+
+	private static void fillNames(final InterfacePerson interfacePerson, final Person person) {
+		final String firstName = interfacePerson.getFirstName();
+		final String middleName = interfacePerson.getMiddleName();
+		final String lastName = interfacePerson.getLastName();
+		List<Name> nameList = person.getNames();
+
+		if (nameList == null) {
+			nameList = new ArrayList<Name>();
+		} else {
+			nameList.clear();
+		}
+		nameList.add(new Name().setGivenName(firstName).setFamilyName(lastName).setMiddleName(middleName));
+		person.setNames(nameList);
+	}
+
+	private static void fillPhones(final InterfacePerson interfacePerson, final Person person) {
+		final String phoneBusiness = interfacePerson.getPhoneBusiness();
+		final String phoneBusinessDirect = interfacePerson.getPhoneBusinessDirect();
+		final String phoneBusiness2 = interfacePerson.getPhoneBusiness2();
+		final String mobileBusiness = interfacePerson.getMobileBusiness();
+		final String mobileBusiness2 = interfacePerson.getMobileBusiness2();
+		final String mobilePrivate = interfacePerson.getMobilePrivate();
+		final String mobilePrivate2 = interfacePerson.getMobilePrivate2();
+		final String phonePrivate = interfacePerson.getPhonePrivate();
+		final String faxPrivate = interfacePerson.getFaxPrivate();
+		final String faxBusiness = interfacePerson.getFaxBusiness();
 		// final String emergencyNumber = p.getEmergencyNumber();
-		final String company = p.getCompanyName();
-		final String jobTitle = p.getJobTitle();
-		final String eMailBusiness = p.geteMailBusiness();
-		final String eMailPrivate = p.geteMailPrivate();
-		final String modified = p.getModified();
-		final String categories = p.getCategories();
-		final String comment = p.getComment();
-		final String birthDate = p.getBirthDate();
-		final List<Name> names = new ArrayList<>();
-		final String children = p.getChildren();
-		final String spouse = p.getSpouse();
-		final String webSite = p.getWebSite();
-		// addresses
-		final String streetAddress = p.getStreetAddress();
-		final String zip = p.getZip();
-		final String city = p.getCity();
-		final String state = p.getState();
-		final String country = p.getCountry();
-		final String officeStreetAddress = p.getOfficeStreetAddress();
-		final String officeZip = p.getOfficeZip();
-		final String officeCity = p.getOfficeCity();
-		final String officeState = p.getOfficeState();
-		final String officeCountry = p.getOfficeCountry();
+		List<PhoneNumber> phoneNumberList = person.getPhoneNumbers();
 
-		names.add(new Name().setGivenName(firstName).setFamilyName(lastName).setMiddleName(middleName));
-		contactToCreate.setNames(names);
-
-		final List<PhoneNumber> phoneNumbers = new ArrayList<>();
-
+		if (phoneNumberList == null) {
+			phoneNumberList = new ArrayList<PhoneNumber>();
+		} else {
+			phoneNumberList.clear();
+		}
 		// predefined values:
 		// 'home'
 		// 'work'
@@ -397,39 +400,67 @@ public class PutDataIntoGoogle {
 		// 'googleVoice'
 		// 'other'
 		// or null
-		phoneNumbers.add(new PhoneNumber().setType("home").setValue(phonePrivate));
-		phoneNumbers.add(new PhoneNumber().setType("work").setValue(phoneBusiness));
-		phoneNumbers.add(new PhoneNumber().setType("mobile").setValue(mobilePrivate));
-		phoneNumbers.add(new PhoneNumber().setType("homeFax").setValue(faxPrivate));
-		phoneNumbers.add(new PhoneNumber().setType("workFax").setValue(faxBusiness));
-		phoneNumbers.add(new PhoneNumber().setType("otherFax").setValue(""));
-		phoneNumbers.add(new PhoneNumber().setType("pager").setValue(""));
-		phoneNumbers.add(new PhoneNumber().setType("workMobile").setValue(mobileBusiness));
-		phoneNumbers.add(new PhoneNumber().setType("workPager").setValue(""));
-		phoneNumbers.add(new PhoneNumber().setType("main").setValue(""));
-		phoneNumbers.add(new PhoneNumber().setType("googleVoice").setValue(""));
-		phoneNumbers.add(new PhoneNumber().setType("other").setValue(""));
+		phoneNumberList.add(new PhoneNumber().setType("home").setValue(phonePrivate));
+		phoneNumberList.add(new PhoneNumber().setType("work").setValue(phoneBusiness));
+		phoneNumberList.add(new PhoneNumber().setType("mobile").setValue(mobilePrivate));
+		phoneNumberList.add(new PhoneNumber().setType("homeFax").setValue(faxPrivate));
+		phoneNumberList.add(new PhoneNumber().setType("workFax").setValue(faxBusiness));
+		phoneNumberList.add(new PhoneNumber().setType("otherFax").setValue(""));
+		phoneNumberList.add(new PhoneNumber().setType("pager").setValue(""));
+		phoneNumberList.add(new PhoneNumber().setType("workMobile").setValue(mobileBusiness));
+		phoneNumberList.add(new PhoneNumber().setType("workPager").setValue(""));
+		phoneNumberList.add(new PhoneNumber().setType("main").setValue(""));
+		phoneNumberList.add(new PhoneNumber().setType("googleVoice").setValue(""));
+		phoneNumberList.add(new PhoneNumber().setType("other").setValue(""));
 		// others
-		phoneNumbers.add(new PhoneNumber().setType("work2").setValue(phoneBusiness2));
-		phoneNumbers.add(new PhoneNumber().setType("workDirect").setValue(phoneBusinessDirect));
-		phoneNumbers.add(new PhoneNumber().setType("workMobile2").setValue(mobileBusiness2));
-		phoneNumbers.add(new PhoneNumber().setType("mobile2").setValue(mobilePrivate2));
-		contactToCreate.setPhoneNumbers(phoneNumbers);
+		phoneNumberList.add(new PhoneNumber().setType("work2").setValue(phoneBusiness2));
+		phoneNumberList.add(new PhoneNumber().setType("workDirect").setValue(phoneBusinessDirect));
+		phoneNumberList.add(new PhoneNumber().setType("workMobile2").setValue(mobileBusiness2));
+		phoneNumberList.add(new PhoneNumber().setType("mobile2").setValue(mobilePrivate2));
+		person.setPhoneNumbers(phoneNumberList);
+	}
 
-		final List<EmailAddress> emailAddresseList = new ArrayList<>();
+	private static void fillEmails(final InterfacePerson interfacePerson, final Person person) {
+		final String eMailBusiness = interfacePerson.geteMailBusiness();
+		final String eMailPrivate = interfacePerson.geteMailPrivate();
+		List<EmailAddress> emailAddressList = person.getEmailAddresses();
 
+		if (emailAddressList == null) {
+			emailAddressList = new ArrayList<EmailAddress>();
+		} else {
+			emailAddressList.clear();
+		}
 		// predefined values:
 		// 'home'
 		// 'work'
 		// 'other'
 		// or null
-		emailAddresseList.add(new EmailAddress().setType("home").setValue(eMailPrivate));
-		emailAddresseList.add(new EmailAddress().setType("work").setValue(eMailBusiness));
-		contactToCreate.setEmailAddresses(emailAddresseList);
+		emailAddressList.add(new EmailAddress().setType("home").setValue(eMailPrivate));
+		emailAddressList.add(new EmailAddress().setType("work").setValue(eMailBusiness));
+		person.setEmailAddresses(emailAddressList);
+	}
 
-		final List<Address> addressList = new ArrayList<>();
-		Address privateAddress = new Address();
-		Address officeAddress = new Address();
+	private static void fillAddresses(final InterfacePerson interfacePerson, final Person person) {
+		final String streetAddress = interfacePerson.getStreetAddress();
+		final String zip = interfacePerson.getZip();
+		final String city = interfacePerson.getCity();
+		final String state = interfacePerson.getState();
+		final String country = interfacePerson.getCountry();
+		final String officeStreetAddress = interfacePerson.getOfficeStreetAddress();
+		final String officeZip = interfacePerson.getOfficeZip();
+		final String officeCity = interfacePerson.getOfficeCity();
+		final String officeState = interfacePerson.getOfficeState();
+		final String officeCountry = interfacePerson.getOfficeCountry();
+		List<Address> addressList = person.getAddresses();
+
+		if (addressList == null) {
+			addressList = new ArrayList<Address>();
+		} else {
+			addressList.clear();
+		}
+
+		final Address privateAddress = new Address();
+		final Address officeAddress = new Address();
 
 		privateAddress.setType("home");
 		privateAddress.setStreetAddress(streetAddress);
@@ -445,61 +476,98 @@ public class PutDataIntoGoogle {
 		officeAddress.setCountry(officeCountry);
 		addressList.add(privateAddress);
 		addressList.add(officeAddress);
-		contactToCreate.setAddresses(addressList);
+		person.setAddresses(addressList);
+	}
 
-		final List<Url> urlList = new ArrayList<>();
-		final Url officeUrl = new Url();
+	private static void fillRelations(final InterfacePerson interfacePerson, final Person person) {
+		final String children = interfacePerson.getChildren();
+		final String spouse = interfacePerson.getSpouse();
+		List<Relation> relationList = person.getRelations();
 
-		officeUrl.setType("work");
-		officeUrl.setValue(webSite);
-		urlList.add(officeUrl);
-		contactToCreate.setUrls(urlList);
+		if (relationList == null) {
+			relationList = new ArrayList<Relation>();
+		} else {
+			relationList.clear();
+		}
+		relationList.add(new Relation().setType("child").setPerson(children));
+		relationList.add(new Relation().setType("spouse").setPerson(spouse));
+		person.setRelations(relationList);
+	}
 
-		final List<Relation> relationList = new ArrayList<>();
-		Relation childrenRelation = new Relation();
-		Relation spouseRelation = new Relation();
+	private static void fillWebsites(final InterfacePerson interfacePerson, final Person person) {
+		final String webSite = interfacePerson.getWebSite();
+		List<Url> urlList = person.getUrls();
 
-		childrenRelation.setType("child");
-		childrenRelation.setPerson(children);
-		spouseRelation.setType("spouse");
-		spouseRelation.setPerson(spouse);
-		relationList.add(childrenRelation);
-		relationList.add(spouseRelation);
-		contactToCreate.setRelations(relationList);
+		if (urlList == null) {
+			urlList = new ArrayList<Url>();
+		} else {
+			urlList.clear();
+		}
+		urlList.add(new Url().setType("work").setValue(webSite));
+		person.setUrls(urlList);
+	}
 
-		final List<Birthday> birthdayList = new ArrayList<>();
+	private static void fillBirthdays(final InterfacePerson interfacePerson, final Person person) {
+		final String birthDate = interfacePerson.getBirthDate();
+		List<Birthday> birthdayList = person.getBirthdays();
 
+		if (birthdayList == null) {
+			birthdayList = new ArrayList<Birthday>();
+		} else {
+			birthdayList.clear();
+		}
 		birthdayList.add(new Birthday().setText(birthDate));
-		contactToCreate.setBirthdays(birthdayList);
+		person.setBirthdays(birthdayList);
+	}
 
-		final List<Organization> organizationList = new ArrayList<>();
+	private static void fillOrganizations(final InterfacePerson interfacePerson, final Person person) {
+		final String company = interfacePerson.getCompanyName();
+		final String jobTitle = interfacePerson.getJobTitle();
+		List<Organization> organizationList = person.getOrganizations();
 
+		if (organizationList == null) {
+			organizationList = new ArrayList<Organization>();
+		} else {
+			organizationList.clear();
+		}
 		// predefined values:
 		// 'work'
 		// 'school'
 		// or null
 		organizationList.add(new Organization().setType("work").setName(company).setTitle(jobTitle));
-		contactToCreate.setOrganizations(organizationList);
+		person.setOrganizations(organizationList);
+	}
 
-		// represents the attribute "notes" in Google
-		final List<Biography> biographyList = new ArrayList<>();
+	private static void fillBiographies(final InterfacePerson interfacePerson, final Person person) {
+		final String comment = interfacePerson.getComment();
+		List<Biography> biographyList = person.getBiographies();
 
+		if (biographyList == null) {
+			biographyList = new ArrayList<Biography>();
+		} else {
+			biographyList.clear();
+		}
 		biographyList.add(new Biography().setValue(comment));
-		contactToCreate.setBiographies(biographyList);
+		person.setBiographies(biographyList);
+	}
 
-		List<ClientData> clientData = contactToCreate.getClientData();
+	private static void fillClientData(final InterfacePerson interfacePerson, final Person person) {
+		final String id = interfacePerson.getUid();
+		final String categories = interfacePerson.getCategories();
+		final String modified = interfacePerson.getModified();
+		List<ClientData> clientDataList = person.getClientData();
 
-		if (clientData != null) {
-			clientData.clear();
+		if (clientDataList == null) {
+			clientDataList = new ArrayList<>();
+		} else {
+			clientDataList.clear();
 		}
 		// represents "own" data, specially the Notes ID
 		// for ensure correct synchronization
-		final List<ClientData> clientDataList = new ArrayList<>();
-
 		clientDataList.add(new ClientData().setKey(LOTUS_CONTACT_UNID).setValue(id));
 		clientDataList.add(new ClientData().setKey(LOTUS_CONTACT_CATEGORIES).setValue(categories));
 		clientDataList.add(new ClientData().setKey(LOTUS_CONTACT_MODIFIED).setValue(modified));
-		contactToCreate.setClientData(clientDataList);
+		person.setClientData(clientDataList);
 	}
 
 	private static void showPersonsNotInNotes(final List<Person> allPersons,
