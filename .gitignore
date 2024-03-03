@@ -32,3 +32,5 @@ hs_err_pid*
 /src/main/resources/credentials.json
 /target/
 /tokens/StoredCredential
+resources/attributes_dario.txt
+resources/attributes_inge.txt
