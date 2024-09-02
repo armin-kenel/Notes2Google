@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.auth.Credentials;
@@ -40,8 +41,10 @@ import com.google.api.services.people.v1.model.ListConnectionsResponse;
 import com.google.api.services.people.v1.model.Name;
 import com.google.api.services.people.v1.model.Organization;
 import com.google.api.services.people.v1.model.Person;
+import com.google.api.services.people.v1.model.PersonMetadata;
 import com.google.api.services.people.v1.model.PhoneNumber;
 import com.google.api.services.people.v1.model.Relation;
+import com.google.api.services.people.v1.model.Source;
 import com.google.api.services.people.v1.model.Url;
 import com.google.common.base.Strings;
 import com.mindoo.domino.jna.utils.StringUtil;
@@ -289,6 +292,12 @@ public class UpdateGooglePersons {
 						doUpdateCounter++;
 						// TODO: used for "filtering"
 						// if (interfacePerson.getLastName().equals("Zoro")) {
+						try {
+							TimeUnit.SECONDS.sleep(3);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 						updateNotes2Google(doUpdateCounter, foundGooglePerson, interfacePerson);
 						// }
 					}
@@ -559,7 +568,23 @@ public class UpdateGooglePersons {
 	}
 
 	private static void fillBiographies(final InterfacePerson interfacePerson, final Person person) {
-		final String comment = interfacePerson.getComment();
+		String comment = interfacePerson.getComment();
+		String modified = interfacePerson.getModified();
+		String modifiedGoogle = "";
+		PersonMetadata metadata = person.getMetadata();
+
+		if (null != metadata) {
+			List<Source> sources = metadata.getSources();
+
+			if (null != sources) {
+				Source source = sources.get(0);
+
+				if (null != source) {
+					modifiedGoogle = source.getUpdateTime();
+				}
+			}
+		}
+
 		List<Biography> biographyList = person.getBiographies();
 
 		if (biographyList == null) {
@@ -567,6 +592,13 @@ public class UpdateGooglePersons {
 		} else {
 			biographyList.clear();
 		}
+		// check if there are new lines and convert
+//		if (StringUtils.isNotBlank(comment)) {
+//			comment = comment.replace("\n", "\n\r");
+//		}
+		comment = comment + "\n\n" + "Google update     : " + modifiedGoogle;
+		comment = comment + "\n" + "Lotus Notes update: " + modified;
+
 		biographyList.add(new Biography().setValue(comment));
 		person.setBiographies(biographyList);
 	}
