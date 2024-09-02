@@ -441,7 +441,7 @@ public class GetDataFromLotusNotes {
 			final String ad = (String) addresses20;
 
 			if (!ad.isEmpty()) {
-				displayError("Addresses ($20) is not null: " + columnDataAsMap);
+				displayText("Addresses ($20) is not null: " + ad);
 			}
 		}
 		if (categories39 != null && categories39 instanceof String) {
@@ -504,7 +504,9 @@ public class GetDataFromLotusNotes {
 			}
 		}
 		if (jobTitle != null) {
-			interfacePerson.setJobTitle((String) jobTitle);
+			if (jobTitle instanceof String) {
+				interfacePerson.setJobTitle((String) jobTitle);
+			}
 		}
 		if (objectName126 != null) {
 			final String name = (String) objectName126;
