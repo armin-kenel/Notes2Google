@@ -293,7 +293,7 @@ public class UpdateGooglePersons {
 						// TODO: used for "filtering"
 						// if (interfacePerson.getLastName().equals("Zoro")) {
 						try {
-							TimeUnit.SECONDS.sleep(3);
+							TimeUnit.SECONDS.sleep(2);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
