@@ -1,8 +1,10 @@
 package ch.secona.notes2google;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -59,6 +61,8 @@ public class GetDataFromLotusNotes {
 	private static final String COMMA_SPACE = ", ";
 	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MMM-yyyy");
+	private static final SimpleDateFormat DATE_FORMAT_ENGLISH = new SimpleDateFormat("yyyy-MM-dd");
+	private static Date updateSinceDate = null;
 	private String value = "";
 
 	private static String stripQuotes(String str) {
@@ -91,9 +95,16 @@ public class GetDataFromLotusNotes {
 		for (final String currArg : args) {
 			if (StringUtil.startsWithIgnoreCase(currArg, "-notesdir=")) {
 				notesProgramDirPath = currArg.substring("-notesdir=".length());
-			}
-			if (StringUtil.startsWithIgnoreCase(currArg, "-ini=")) {
+			} else if (StringUtil.startsWithIgnoreCase(currArg, "-ini=")) {
 				notesIniPath = currArg.substring("-ini=".length());
+			} else if (StringUtil.startsWithIgnoreCase(currArg, "-updateSinceDate=")) {
+				String tmp = currArg.substring("-updateSinceDate=".length());
+
+				try {
+					updateSinceDate = DATE_FORMAT_ENGLISH.parse(tmp);
+				} catch (ParseException e) {
+					displayError("incorrect command line argument: -updateSinceDate=" + tmp);
+				}
 			}
 		}
 
@@ -109,6 +120,7 @@ public class GetDataFromLotusNotes {
 		notesIniPath = stripQuotes(notesIniPath);
 
 		String[] notesInitArgs;
+
 		if (!StringUtil.isEmpty(notesProgramDirPath) && !StringUtil.isEmpty(notesIniPath)) {
 			notesInitArgs = new String[] { notesProgramDirPath, "=" + notesIniPath };
 		} else {
@@ -287,12 +299,30 @@ public class GetDataFromLotusNotes {
 		displayText("Processing the following " + viewEntries.size() + " entries:");
 		for (final NotesViewEntryData currEntry : viewEntries) {
 			final InterfacePerson interfacePerson = mapInterfacePerson(currEntry);
+			boolean doUpdate = false;
 
-			mapValues(interfacePerson, dbNames, currEntry);
-			interfacePersonList.add(interfacePerson);
-			numberOfPersons++;
-			displayText(String.format("%4d/%4d: %s", numberOfPersons, //
-					numberOfViewEntries, interfacePerson.getShortInfo()));
+			if (updateSinceDate == null) {
+				doUpdate = true;
+			} else {
+				String tmp = interfacePerson.getModified();
+				Date date = null;
+
+				try {
+					date = DATE_FORMAT.parse(tmp);
+					if (date.after(updateSinceDate)) {
+						doUpdate = true;
+					}
+				} catch (ParseException e) {
+					displayText("modified not correct format: " + tmp);
+				}
+			}
+			if (doUpdate) {
+				mapValues(interfacePerson, dbNames, currEntry);
+				interfacePersonList.add(interfacePerson);
+				numberOfPersons++;
+				displayText(String.format("%4d/%4d: %s", numberOfPersons, //
+						numberOfViewEntries, interfacePerson.getShortInfo()));
+			}
 		}
 		ReadWriteInterfacePerson.writeJson(PATH, interfacePersonList);
 		displayText("");
@@ -557,6 +587,8 @@ public class GetDataFromLotusNotes {
 					interfacePerson.setMobileBusiness(value);
 				} else if ("Mobile 2 (Business)".equals(type)) {
 					interfacePerson.setMobileBusiness2(value);
+				} else if ("Mobile 3 (Business)".equals(type)) {
+					interfacePerson.setMobileBusiness3(value);
 				} else if ("Cell Phone".equals(type) || //
 						"Cell phone".equals(type) || //
 						"Mobile Private".equals(type) || //
@@ -571,6 +603,8 @@ public class GetDataFromLotusNotes {
 					interfacePerson.setMobilePrivate(value);
 				} else if ("Mobile 2".equals(type)) {
 					interfacePerson.setMobilePrivate2(value);
+				} else if ("Mobile 3".equals(type)) {
+					interfacePerson.setMobilePrivate3(value);
 				} else if ("Home Fax".equals(type) || //
 						"Home fax".equals(type)) {
 					interfacePerson.setFaxPrivate(value);
