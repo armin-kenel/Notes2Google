@@ -472,6 +472,7 @@ public class GetDataFromLotusNotes {
 
 			if (!ad.isEmpty()) {
 				displayText("Addresses ($20) is not null: " + ad);
+				displayText("- " + currEntry);
 			}
 		}
 		if (categories39 != null && categories39 instanceof String) {
